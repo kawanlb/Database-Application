@@ -23,7 +23,7 @@ def insert_data(conn, table_name, data):
 
 try:
     # alterar para o caminho do arquivo do dataset local
-    df = pd.read_csv('/home/kawan/Downloads/archive/video_games_sales.csv')
+    df = pd.read_csv('./video_games_sales.csv')
 
     # None para valores void
     df = df.where(pd.notnull(df), None)

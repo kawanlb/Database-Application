@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "1234"
+      MYSQL_DATABASE: "game_sales"
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./ScriptsMysql/script.sql:/docker-entrypoint-initdb.d/script.sql"
+      
+  
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+
+  import_data:
+    image: python:3
+    depends_on:
+      - mysql
+    volumes:
+      - "./ScriptsMysql:/ScriptsMysql"
+    command: "pip install pandas && pip install mysql-connector-python && python /ScriptsMysql/import_data.py"      
+
