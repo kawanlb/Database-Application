@@ -2,14 +2,20 @@ import pandas as pd
 import mysql.connector
 
 
-def connect_to_db():#alterar de acordo com o servidor sql:
-    return mysql.connector.connect(
-        host='172.17.0.2', 
-        port=3306,
-        user='root',
-        password='1234',
-        database='games_sales'
-    )
+def connect_to_db():
+    try:
+        conn = mysql.connector.connect(
+            host='mysql',  # Nome do serviço no Docker Compose
+            port="3306",     # Porta do MySQL
+            user='root',
+            password='root',
+            database='games_sales'
+        )
+        print("Conexão com o banco de dados MySQL estabelecida com sucesso!")
+        return conn
+    except mysql.connector.Error as e:
+        print(f"Erro ao conectar ao banco de dados MySQL: {e}")
+        return None
 
 #começa a adicionar os dados do dataset para o banco de dados
 def insert_data(conn, table_name, data):
@@ -23,7 +29,7 @@ def insert_data(conn, table_name, data):
 
 try:
     # alterar para o caminho do arquivo do dataset local
-    df = pd.read_csv('./video_games_sales.csv')
+    df = pd.read_csv('video_games_sales.csv', nrows=50)
 
     # None para valores void
     df = df.where(pd.notnull(df), None)
