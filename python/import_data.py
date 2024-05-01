@@ -34,6 +34,8 @@ try:
     # None para valores void
     df = df.where(pd.notnull(df), None)
 
+    df['year'] = df['year'].astype(int)
+
     conn = connect_to_db()
 
     genres = df['genre'].unique()
@@ -67,9 +69,10 @@ try:
                 editora_id = result[0]
         if editora_id is not None:
             jogo_editora_id = insert_data(conn, 'jogo_editora', {'jogo_id': jogo_id, 'editora_id': editora_id})
-        
+
+            ano_lancamento = row['year']
             plataforma_id = platforms.tolist().index(row['platform']) + 1
-            insert_data(conn, 'jogo_plataforma', {'jogo_editora_id': jogo_editora_id, 'plataforma_id': plataforma_id})
+            insert_data(conn, 'jogo_plataforma', {'jogo_editora_id': jogo_editora_id, 'plataforma_id': plataforma_id, 'ano_lancamento': ano_lancamento})
 
             insert_data(conn, 'venda', {'jogo_plataforma_id': jogo_editora_id, 'vendas_na': row['na_sales'], 
                                          'vendas_eu': row['eu_sales'], 'vendas_jp': row['jp_sales'], 

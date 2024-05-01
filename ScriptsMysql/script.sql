@@ -32,6 +32,7 @@ CREATE TABLE jogo_plataforma (
   jogo_plataforma_id INT AUTO_INCREMENT PRIMARY KEY,
   jogo_editora_id INT NOT NULL,
   plataforma_id INT NOT NULL,
+  ano_lancamento INT,
   FOREIGN KEY (jogo_editora_id) REFERENCES jogo_editora(jogo_editora_id),
   FOREIGN KEY (plataforma_id) REFERENCES plataforma(plataforma_id)
 );
