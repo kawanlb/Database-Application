@@ -1,6 +1,13 @@
 import pandas as pd
 import mysql.connector
+import redis
 
+r = redis.Redis(host='redis', port="6379", db=0)
+
+if r.ping():
+    print("Conexão com o redis estabelecida com sucesso!")
+else:
+    print("Erro ao conectar ao redis")
 
 def connect_to_db():
     try:
@@ -16,6 +23,24 @@ def connect_to_db():
     except mysql.connector.Error as e:
         print(f"Erro ao conectar ao banco de dados MySQL: {e}")
         return None
+def insert_data_redis(chave_redis, query):
+    resultado_cache = r.get(chave_redis)
+    if resultado_cache:
+        print("Resultado recuperado do cache do redis")
+        return resultado_cache
+
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    cursor.execute(query)
+    resultados = cursor.fetchall()
+
+    #Armazena o resultado no redis
+    for resultado in resultados:
+        r.rpush(chave_redis, resultado[0])
+    
+    conn.close()
+    print("Resultado consultado do MySql e armazenado no cache do Redis")
+    return resultados
 
 #começa a adicionar os dados do dataset para o banco de dados
 def insert_data(conn, table_name, data):
@@ -86,3 +111,8 @@ except Exception as e:
 finally:
     if 'conn' in locals():
         conn.close()
+
+
+query = "SELECT titulo FROM jogo"
+chave_redis = "nome_jogos"
+insert_data_redis(chave_redis, query)
