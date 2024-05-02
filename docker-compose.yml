@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  mysql:
+    build: ./ScriptsMysql
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'games_sales'
+    ports:
+      - 3306:3306
+      
+  
+  redis:
+    image: redis:latest
+    restart: always
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  import_data:
+    build: ./python
+    command: python3 ./import_data.py
+    depends_on:
+      - mysql
+
