@@ -11,7 +11,6 @@ services:
     ports:
       - 3306:3306
       
-  
   redis:
     image: redis:latest
     restart: always
@@ -25,3 +24,9 @@ services:
     depends_on:
       - mysql
 
+  mysql_to_redis:
+    build: ./python
+    command: python3 ./mysql_to_redis.py
+    depends_on:
+      - mysql
+      - redis
