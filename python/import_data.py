@@ -24,7 +24,7 @@ try:
         print("Conexão com o banco de dados MySQL estabelecida com sucesso!")
 
         # Alterar para o caminho do arquivo do dataset local
-        df = pd.read_csv('video_games_sales.csv', nrows=500)
+        df = pd.read_csv('video_games_sales.csv', nrows=1000)
 
         # Remover valores não numéricos da coluna 'year' e converter para inteiro
         df['year'] = df['year'].apply(clean_year)

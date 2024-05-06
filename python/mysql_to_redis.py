@@ -1,7 +1,7 @@
 from mysql_connection import connect_to_db
 from redis_connection import connect_to_redis
 
-def insert_data_redis(chave_redis, data):
+def insert_data_redis_batch(chave_redis, data):
     r = connect_to_redis()
     
     if not r:
@@ -13,9 +13,15 @@ def insert_data_redis(chave_redis, data):
         print("A chave já existe no Redis.")
         return False
 
-    # Insere os dados no Redis
-    for item in data:
-        r.rpush(chave_redis, item)
+    # Insere os dados em lotes
+    try:
+        with r.pipeline() as pipe:
+            for item in data:
+                pipe.rpush(chave_redis, item)
+            pipe.execute()
+    except Exception as e:
+        print("Erro ao inserir dados no Redis:", e)
+        return False
     
     print("Dados inseridos com sucesso no Redis.")
     return True
@@ -28,52 +34,41 @@ try:
 
     cursor = conn.cursor()
 
-    # Consulta para obter os nomes dos jogos
+    # Consultas ao MySQL
     cursor.execute("SELECT titulo FROM jogo")
-    resultados = cursor.fetchall()
-
-    # Consulta para obter os nomes das editoras
+    resultados_jogos = cursor.fetchall()
     cursor.execute("SELECT editora_nome FROM editora")
-    editoras = cursor.fetchall()
-
-    # Consulta para obter os nomes das plataformas
-    cursor.execute("SELECT plataforma_nome FROM plataforma")
-    plataformas = cursor.fetchall()
+    resultados_editoras = cursor.fetchall()
+    cursor.execute("SELECT plataforma.plataforma_nome, jogo.titulo FROM jogo_plataforma INNER JOIN plataforma ON jogo_plataforma.plataforma_id = plataforma.plataforma_id INNER JOIN jogo ON jogo_plataforma.jogo_editora_id = jogo.jogo_id")
+    resultados_plataformas_jogos = cursor.fetchall()
+    cursor.execute("SELECT jogo.titulo, venda.vendas_na, venda.vendas_eu, venda.vendas_jp, venda.outras_vendas FROM venda INNER JOIN jogo_plataforma ON venda.jogo_plataforma_id = jogo_plataforma.jogo_plataforma_id INNER JOIN jogo ON jogo_plataforma.jogo_editora_id = jogo.jogo_id")
+    resultados_vendas = cursor.fetchall()
 
     conn.close()
 
-    if resultados:
-        nomes_jogos = [resultado[0] for resultado in resultados]
-        chave_nomes_jogos = "nome_jogos"
-        
-        if insert_data_redis(chave_nomes_jogos, nomes_jogos):
-            print("Consulta ao MySQL realizada e nomes dos jogos inseridos no Redis.")
-        else:
-            print("Erro ao inserir nomes dos jogos no Redis.")
-    else:
-        print("Nenhum dado encontrado na consulta ao MySQL.")
+    # Inserção de dados no Redis
+    if resultados_jogos:
+        nomes_jogos = [resultado[0] for resultado in resultados_jogos]
+        insert_data_redis_batch("nome_jogos", nomes_jogos)
 
-    if editoras:
-        nomes_editoras = [editora[0] for editora in editoras]
-        chave_editoras = "nomes_editoras"
-        
-        if insert_data_redis(chave_editoras, nomes_editoras):
-            print("Consulta ao MySQL realizada e nomes das editoras inseridos no Redis.")
-        else:
-            print("Erro ao inserir nomes das editoras no Redis.")
-    else:
-        print("Nenhum dado encontrado na consulta ao MySQL para editoras.")
+    if resultados_editoras:
+        nomes_editoras = [editora[0] for editora in resultados_editoras]
+        insert_data_redis_batch("nomes_editoras", nomes_editoras)
 
-    if plataformas:
-        nomes_plataformas = [plataforma[0] for plataforma in plataformas]
-        chave_plataformas = "nomes_plataformas"
+    if resultados_plataformas_jogos:
+        dados_plataformas_jogos = [(plataforma_jogo[0], plataforma_jogo[1]) for plataforma_jogo in resultados_plataformas_jogos]
+        insert_data_redis_batch("plataformas_jogos", dados_plataformas_jogos)
+
+    if resultados_vendas:
+        vendas_na = [float(venda[1]) for venda in resultados_vendas]
+        vendas_eu = [float(venda[2]) for venda in resultados_vendas]
+        vendas_jp = [float(venda[3]) for venda in resultados_vendas]
+        outras_vendas = [float(venda[4]) for venda in resultados_vendas]
         
-        if insert_data_redis(chave_plataformas, nomes_plataformas):
-            print("Consulta ao MySQL realizada e nomes das plataformas inseridos no Redis.")
-        else:
-            print("Erro ao inserir nomes das plataformas no Redis.")
-    else:
-        print("Nenhum dado encontrado na consulta ao MySQL para plataformas.")
+        insert_data_redis_batch("vendas_na", vendas_na)
+        insert_data_redis_batch("vendas_eu", vendas_eu)
+        insert_data_redis_batch("vendas_jp", vendas_jp)
+        insert_data_redis_batch("outras_vendas", outras_vendas)
 
 except Exception as e:
     print("Erro:", e)
