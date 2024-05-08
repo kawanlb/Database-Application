@@ -50,7 +50,7 @@ def ranking_vendas():
             jogo_plataforma = row[0]
             total_vendas = float(row[1])  # Convertendo Decimal para float
             r.zadd("ranking_vendas", {jogo_plataforma: total_vendas})
-            print("Ranking de vendas criado e armazenado no Redis.")
+        print("Ranking de vendas criado e armazenado no Redis.")    
     else:
         print("Não há dados de vendas para criar o ranking.")
 
@@ -74,7 +74,7 @@ def jogo_genero(genero_id):
         conjunto_key = f"genero:{nome_genero}"
         for jogo, _ in resultados:
             r.sadd(conjunto_key, jogo)
-            print("adicionado com sucesso genero")
+        print("adicionado com sucesso genero")
         
     else:
         print("Não há dados de jogos para inserir no Redis.")
@@ -94,30 +94,17 @@ try:
     cursor.execute("SELECT editora_nome FROM editora")
     resultados_editoras = cursor.fetchall()
 
-    cursor.execute("SELECT jogo.titulo, venda.vendas_na, venda.vendas_eu, venda.vendas_jp, venda.outras_vendas FROM venda INNER JOIN jogo_plataforma ON venda.jogo_plataforma_id = jogo_plataforma.jogo_plataforma_id INNER JOIN jogo ON jogo_plataforma.jogo_editora_id = jogo.jogo_id")
-    resultados_vendas = cursor.fetchall()
-
     conn.close()
 
     # Inserção de dados no Redis
     if resultados_jogos:
         nomes_jogos = [resultado[0] for resultado in resultados_jogos]
-        insert_data_redis_batch("nome_jogos", nomes_jogos)
+        insert_data_redis_batch("nomes_jogos", nomes_jogos)
 
     if resultados_editoras:
         nomes_editoras = [editora[0] for editora in resultados_editoras]
         insert_data_redis_batch("nomes_editoras", nomes_editoras)
 
-    if resultados_vendas:
-        vendas_na = [float(venda[1]) for venda in resultados_vendas]
-        vendas_eu = [float(venda[2]) for venda in resultados_vendas]
-        vendas_jp = [float(venda[3]) for venda in resultados_vendas]
-        outras_vendas = [float(venda[4]) for venda in resultados_vendas]
-        
-        insert_data_redis_batch("vendas_na", vendas_na)
-        insert_data_redis_batch("vendas_eu", vendas_eu)
-        insert_data_redis_batch("vendas_jp", vendas_jp)
-        insert_data_redis_batch("outras_vendas", outras_vendas)
 
 except Exception as e:
     print("Erro:", e)
